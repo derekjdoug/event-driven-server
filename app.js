@@ -25,7 +25,6 @@ convertTimestamp = (timestamp) => {
 }
 
 function genCustomer() {
-  sto
   return {
     status: "Ready for pickup",
     payload: {
