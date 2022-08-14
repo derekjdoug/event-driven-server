@@ -4,73 +4,70 @@ const Chance = new chance();
 
 const caps = new EventEmitter();
 
+//Courtesy of Hugo, sleep helper allows delay between emits
+function sleep(amt) {
+  return new Promise((resolve) => setTimeout(resolve, amt));
+}
+
+//Generates random name to use as delivery driver
+function randomDriver() {
+  return Chance.name();
+}
+
+convertTimestamp = (timestamp) => {
+  options = {
+    hour: 'numeric', minute: 'numeric',
+    weekday: 'long', month: 'long', day: 'numeric',
+    hour12: true,
+  }
+  let date = new Intl.DateTimeFormat('en-EN', options).format(timestamp);
+  return date;
+}
+
 function genCustomer() {
+  sto
   return {
-    time: Date.now(),
     status: "Ready for pickup",
     payload: {
+      time: Date.now(),
       orderID: Chance.hash(),
-      store: Chance.sentence({ words: 2}),
+      store: Chance.company(),
       address: `${Chance.city()}, ${Chance.state()}`,
     }
   }
 }
 
 function makeRequest(payload) {
-  const { status, orderID, store, address } = payload;
   return {
     timeRequested: Date.now(),
-    status,
-    payload: {
-      orderID,
-      store,
-      address,
-    },
+    status : payload.status,
+    payload: payload.payload,
   }
 }
 
-function packageReady(payload) {
-  const { status, payload } = payload;
-  console.log(status);
-  console.log(payload);
-  caps.emit("packageRequest",)
+async function packageReady(package) {
+  console.log(`Package Ready`, package);
+  await sleep(2000);
+  caps.emit("packageRequest", package)
 };
 
-function packagePickedUp(payload) {
-  const { status, payload } = payload;
-  return {
-    status,
-    payload,
-  }
+async function packagePickedUp(package) {
+  driver = randomDriver();
+  package.status = `Picked up at ${convertTimestamp(Date.now())} by ${driver}`;
+  console.log(`Picked up the package`, package);
+  await sleep(2000);
+  caps.emit("packagePickedUp", package, driver)
 };
 
-function packageDelivered(payload) {
-  const { status, payload } = payload;
-  return {
-    status,
-    payload,
-  }
+async function packageDelivered(package, driver) {
+  package.status = `Delivered at ${convertTimestamp(Date.now())} by ${driver}`;
+  console.log(`Delivered the package`, package);
+  await sleep(2000);
+  caps.emit("packageDelivered", package);
 };
 
-caps.addListener("requestMade", packageReady());
-caps.addListener("packageRequest", (pickup) => console.log("Pick Up Request", pickup));
-caps.addListener("packagePickedUp", (pickup) => console.log("Driver picked up package", pickup));
-caps.addListener("packageDelivered", (pickup) => console.log("Package delivered", pickup));
-
-// setInterval(() => {
-//   caps.emit("requestMade", makeRequest("requesting pickup", "Hugo's Hoagies", "Bainbridge Manor"));
-// }, 4000);
-
-// setInterval(() => {
-//   caps.emit("packageRequest", packageReady("request received", payload));
-// }, 6000);
-
-// setInterval(() => {
-//   caps.emit("packagePickedUp", packagePickedUp("driver picked up", Date.now(), payload));
-// }, 8000);
-
-// setInterval(() => {
-//   caps.emit("packageDelivered", packageDelivered("delivered successfully", Date.now(), payload));
-// }, 10000);
+caps.addListener("requestMade", packageReady);
+caps.addListener("packageRequest", packagePickedUp);
+caps.addListener("packagePickedUp", packageDelivered);
 
 caps.emit("requestMade", makeRequest(genCustomer()));
