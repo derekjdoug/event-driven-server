@@ -2,27 +2,47 @@ const socketIo = require("socket.io");
 const chance = require("chance");
 const Chance = new chance();
 
-const io = socketIo(3500);
+const caps = socketIo(3500);
 
 const allClients = [];
+let deliveryNotices = ["Deliveries:"];
+let packageRequests = [];
 
-io.on("connection", (client) => {
+function deliveryHandler(package){
+  deliveryNotices.push(package);
+  console.log(package);
+}
+
+caps.on("connection", (client) => {
   allClients.push(client);
+  if(deliveryNotices !== undefined){
+    caps.emit("deliveryNotices", deliveryNotices);
+    deliveryNotices = [];
+  } else {
+    caps.emit("deliveryNotices", console.log("no new deliveries today"));
+  };
+
   client.on("vendorRequest", (package) => {
-    io.emit("vendorRequest", package)
+    packageRequests.push(package);
+    // caps.emit("vendorRequest", packageRequests);
+    // packageRequests = [];
+    // console.log(packageRequests);
   });
-  client.on("packagePickedUp", (package, driver) => {
-    io.emit("pickUpNotification", package, driver);
+  client.on("sendRequests", () => {
+    caps.emit("vendorRequests", packageRequests);
   })
-  client.on("goDeliver", (package) => {
-    io.emit("goDeliver", package, console.log("Confirmation sent to parcel service"));
+  client.on("packagePickedUp", (package, driver) => {
+    caps.emit("pickUpNotification", package, driver);
+  })
+  client.on("goDeliver", (package, driver) => {
+    caps.emit("goDeliver", package, driver, console.log("Confirmation sent to parcel service"));
   })
   client.on("packageDelivered", (package) => {
-    io.emit("deliveryConfimation", package, console.log("Confirmation to Vendor"));
+    caps.emit("deliveryConfimation", package, console.log("Confirmation to Vendor"));
   })
 });
 
 setInterval(() => {
   console.log("Generating a Customer");
-  io.emit("requestMade", console.log("making request"));
+  caps.emit("requestMade", console.log("making request"));
 }, 8000);
