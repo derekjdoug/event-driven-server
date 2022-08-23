@@ -4,6 +4,7 @@ const chance = require("chance");
 const Chance = new chance();
 
 const socket = io("ws://localhost:3500");
+const deliveryNotices = [];
 
 function reqHelper() {
   function genCustomer() {
@@ -48,6 +49,17 @@ socket.on("pickUpNotification", (package, driver) => {
 socket.on("deliveryConfirmation", (package) => {
   console.log(package);
   console.log("Customer Received Product");
+});
+
+socket.on("deliveryNotices", (newDeliveries) => {
+  if(typeof deliveryNotices === "array"){
+    deliveryNotices.forEach((delivery) => {
+      deliveryNotices.push(delivery);
+    });
+    console.log(deliveryNotices)
+  } else {
+    console.log(newDeliveries);
+  }
 });
 
 module.exports = {
